@@ -1,12 +1,17 @@
 package com.kkyb.travelmatics;
 
-public class TravelDeal {
+import java.io.Serializable;
+
+public class TravelDeal implements Serializable {
 
   private String id;
   private String title;
   private String description;
   private String price;
   private String imageUrl;
+
+  public TravelDeal() {
+  }
 
   public TravelDeal(String title, String description, String price, String imageUrl) {
     this.title = title;
