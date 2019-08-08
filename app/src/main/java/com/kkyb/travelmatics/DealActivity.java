@@ -4,8 +4,10 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -34,6 +36,7 @@ public class DealActivity extends AppCompatActivity {
   private static final int PICTURE_RESULT = 42;
 
   private ImageView imageView;
+  private Button btnImage;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +62,7 @@ public class DealActivity extends AppCompatActivity {
     txtDescription.setText(deal.getDescription());
     showImage(deal.getImageUrl());
 
-    Button btnImage = findViewById(R.id.btnImage);
+    btnImage = findViewById(R.id.btnImage);
     btnImage.setOnClickListener(view -> {
       Intent imageIntent = new Intent(Intent.ACTION_GET_CONTENT);
       imageIntent.setType("image/jpeg");
@@ -77,6 +80,13 @@ public class DealActivity extends AppCompatActivity {
     menu.findItem(R.id.save_menu).setVisible(FirebaseUtil.isAdmin);
     menu.findItem(R.id.delete_menu).setVisible(FirebaseUtil.isAdmin);
     enableEditTexts(FirebaseUtil.isAdmin);
+
+    if (FirebaseUtil.isAdmin) {
+      btnImage.setVisibility(View.VISIBLE);
+    } else {
+      btnImage.setVisibility(View.INVISIBLE);
+    }
+
     return true;
   }
 
@@ -116,6 +126,7 @@ public class DealActivity extends AppCompatActivity {
           taskSnapshot -> ref.getDownloadUrl()
               .addOnSuccessListener(uri -> {
                 deal.setImageUrl(uri.toString());
+                deal.setImageName(taskSnapshot.getStorage().getPath());
                 showImage(uri.toString());
               }));
     }
@@ -140,6 +151,10 @@ public class DealActivity extends AppCompatActivity {
     }
 
     databaseReference.child(deal.getId()).removeValue();
+    if (deal.getImageName() != null && !deal.getImageName().isEmpty()) {
+      Log.d("Delete", deal.getImageName());
+      FirebaseUtil.firebaseStorage.getReference().child(deal.getImageName()).delete();
+    }
   }
 
   private void backToList() {
