@@ -20,12 +20,14 @@ public class ListActivity extends AppCompatActivity {
     setContentView(R.layout.activity_list);
     Toolbar toolbar = findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
-    FirebaseUtil.openFbReference("traveldeals", this);
   }
 
   @Override
   protected void onResume() {
     super.onResume();
+
+    FirebaseUtil.openFbReference("traveldeals", this);
+
     if (!FirebaseUtil.isAdmin) {
       invalidateOptionsMenu();
     }

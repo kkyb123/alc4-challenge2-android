@@ -1,10 +1,14 @@
 package com.kkyb.travelmatics;
 
 import android.content.Intent;
+import android.content.res.Resources;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,6 +16,9 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.StorageReference;
+
+import com.squareup.picasso.Picasso;
 
 public class DealActivity extends AppCompatActivity {
 
@@ -24,10 +31,14 @@ public class DealActivity extends AppCompatActivity {
 
   private TravelDeal deal;
 
+  private static final int PICTURE_RESULT = 42;
+
+  private ImageView imageView;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_insert);
+    setContentView(R.layout.activity_deal);
     Toolbar toolbar = findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
 
@@ -37,6 +48,7 @@ public class DealActivity extends AppCompatActivity {
     txtTitle = findViewById(R.id.txtTitle);
     txtPrice = findViewById(R.id.txtPrice);
     txtDescription = findViewById(R.id.txtDescription);
+    imageView = findViewById(R.id.image);
 
     Intent intent = getIntent();
     TravelDeal travelDeal = (TravelDeal) intent.getSerializableExtra("Deal");
@@ -45,6 +57,17 @@ public class DealActivity extends AppCompatActivity {
     txtTitle.setText(deal.getTitle());
     txtPrice.setText(deal.getPrice());
     txtDescription.setText(deal.getDescription());
+    showImage(deal.getImageUrl());
+
+    Button btnImage = findViewById(R.id.btnImage);
+    btnImage.setOnClickListener(view -> {
+      Intent imageIntent = new Intent(Intent.ACTION_GET_CONTENT);
+      imageIntent.setType("image/jpeg");
+      imageIntent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+
+      this.startActivityForResult(Intent.createChooser(imageIntent,
+          "Insert Picture"), PICTURE_RESULT);
+    });
   }
 
   @Override
@@ -80,6 +103,22 @@ public class DealActivity extends AppCompatActivity {
     }
 
     return super.onOptionsItemSelected(item);
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+
+    if (requestCode == PICTURE_RESULT && resultCode == RESULT_OK) {
+      Uri imageUri = data.getData();
+      StorageReference ref = FirebaseUtil.storageReference.child(imageUri.getLastPathSegment());
+      ref.putFile(imageUri).addOnSuccessListener(this,
+          taskSnapshot -> ref.getDownloadUrl()
+              .addOnSuccessListener(uri -> {
+                deal.setImageUrl(uri.toString());
+                showImage(uri.toString());
+              }));
+    }
   }
 
   private void saveDeal() {
@@ -118,5 +157,16 @@ public class DealActivity extends AppCompatActivity {
     txtTitle.setEnabled(isEnabled);
     txtDescription.setEnabled(isEnabled);
     txtPrice.setEnabled(isEnabled);
+  }
+
+  private void showImage(String url) {
+    if (url != null && !url.isEmpty()) {
+      int width = Resources.getSystem().getDisplayMetrics().widthPixels;
+      Picasso.get()
+          .load(url)
+          .resize(width, width * 2 / 3)
+          .centerCrop()
+          .into(imageView);
+    }
   }
 }
