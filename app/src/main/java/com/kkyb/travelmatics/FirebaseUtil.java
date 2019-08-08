@@ -1,11 +1,16 @@
 package com.kkyb.travelmatics;
 
-import android.app.Activity;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.firebase.ui.auth.AuthUI;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -16,7 +21,7 @@ import java.util.List;
 public class FirebaseUtil {
 
   private static final int RC_SIGN_IN = 123;
-  private static Activity caller;
+  private static ListActivity caller;
 
   public static FirebaseDatabase firebaseDatabase;
   public static DatabaseReference databaseReference;
@@ -28,10 +33,12 @@ public class FirebaseUtil {
 
   public static ArrayList<TravelDeal> deals;
 
+  public static boolean isAdmin;
+
   private FirebaseUtil() {
   }
 
-  public static void openFbReference(String ref, Activity callerActivity) {
+  public static void openFbReference(String ref, ListActivity callerActivity) {
     if (firebaseUtil == null) {
       caller = callerActivity;
 
@@ -42,6 +49,8 @@ public class FirebaseUtil {
       authStateListener = firebaseAuth -> {
         if (firebaseAuth.getCurrentUser() == null) {
           signIn();
+        } else {
+          checkAdmin(firebaseAuth.getUid());
         }
 
         Toast.makeText(callerActivity, "Welcome back!", Toast.LENGTH_LONG).show();
@@ -49,6 +58,39 @@ public class FirebaseUtil {
     }
     deals = new ArrayList<>();
     databaseReference = firebaseDatabase.getReference().child(ref);
+  }
+
+  private static void checkAdmin(String uid) {
+    isAdmin = false;
+    DatabaseReference ref = firebaseDatabase.getReference().child("administrators").child(uid);
+    ChildEventListener listener = new ChildEventListener() {
+      @Override
+      public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+        FirebaseUtil.isAdmin = true;
+        caller.showMenu();
+      }
+
+      @Override
+      public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+      }
+
+      @Override
+      public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+      }
+
+      @Override
+      public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+      }
+
+      @Override
+      public void onCancelled(@NonNull DatabaseError databaseError) {
+
+      }
+    };
+    ref.addChildEventListener(listener);
   }
 
   private static void signIn() {

@@ -26,6 +26,9 @@ public class ListActivity extends AppCompatActivity {
   @Override
   protected void onResume() {
     super.onResume();
+    if (!FirebaseUtil.isAdmin) {
+      invalidateOptionsMenu();
+    }
 
     FirebaseUtil.attachAuthListener();
 
@@ -48,6 +51,8 @@ public class ListActivity extends AppCompatActivity {
   public boolean onCreateOptionsMenu(Menu menu) {
     // Inflate the menu; this adds items to the action bar if it is present.
     getMenuInflater().inflate(R.menu.list_activity_menu, menu);
+    MenuItem insertMenu = menu.findItem(R.id.insert_menu);
+    insertMenu.setVisible(FirebaseUtil.isAdmin);
     return true;
   }
 
@@ -71,6 +76,10 @@ public class ListActivity extends AppCompatActivity {
     }
 
     return super.onOptionsItemSelected(item);
+  }
+
+  public void showMenu() {
+    invalidateOptionsMenu();
   }
 
 }
